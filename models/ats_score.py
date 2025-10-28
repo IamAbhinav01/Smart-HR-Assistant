@@ -53,10 +53,54 @@ score:<number>
         return result.content  
 
 
+class RoleMatching:
+    def __init__(self, model_name="moonshotai/kimi-k2-instruct-0905", temperature=0.8):
+        self.parser = AdvancedResumeParser()
+
+        self.model = ChatGroq(
+            model=model_name,
+            temperature=temperature,
+            max_retries=2
+        )
+
+        self.role_matching_prompt = PromptTemplate(
+            input_variables=["result"],
+            template="""
+Act as a professional Career Role Analyzer.
+Analyze the resume and suggest the roles the candidate is most suitable for.
+
+Return ONLY JSON in the format:
+{{
+  "suggested_roles": ["role1", "role2", "role3", ...]
+}}
+
+Resume:
+{result}
+"""
+        )
+
+        self.chain = self.role_matching_prompt | self.model
+
+    def get_roles(self, resume_path: str):
+        raw_text = self.parser.text_auto_extract(resume_path)
+        llm_output = self.parser.llm_tool_call(raw_text)
+        parsed_result = llm_output.content
+
+        result = self.chain.invoke({"result": parsed_result})
+        return result.content
+
 
 if __name__ == "__main__":
     scorer = ResumeScorer()
+    matcher = RoleMatching()
+
     FILE_PATH = r'E:\airesume\myResume.docx'
-    job_text = "physics teacher"
+    job_text = "mlops engineer"
+
+    print("\n=== Resume Score ===")
     output = scorer.score_resume(FILE_PATH, job_text)
     print(output)
+
+    print("\n=== Suggested Roles ===")
+    output2 = matcher.get_roles(FILE_PATH)
+    print(output2)
