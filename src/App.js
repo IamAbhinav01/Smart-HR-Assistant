@@ -4,6 +4,7 @@ import Analysis from '../src/pages/Analysis';
 
 export default function App() {
   return (
+    // <Analysis />
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
