@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Header } from '../components/Header';
 import { LHome } from '../components/LHome';
+
 import { useNavigate } from 'react-router-dom';
 
 import { FileUploader } from '../components/FileUploader';
@@ -27,16 +28,24 @@ export default function App() {
 
   // Handle file select
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) setFileName(`✅ Uploaded: ${file.name}`);
-    else setFileName('');
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile); // save the file object
+      setFileName(`✅ Uploaded: ${selectedFile.name}`);
+    } else {
+      setFile(null);
+      setFileName('');
+    }
   };
 
   // Handle drag & drop
   const handleDrop = (e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) setFileName(`✅ Uploaded: ${file.name}`);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      setFile(droppedFile);
+      setFileName(`✅ Uploaded: ${droppedFile.name}`);
+    }
   };
 
   // Handle job role suggestions
@@ -52,12 +61,54 @@ export default function App() {
     );
     setSuggestions(matches);
   };
+  const handleStartAnalysis = async () => {
+    const file = fileInputRef.current.files[0];
+    if (!file) return alert('Upload your resume!');
 
+    const formData = new FormData();
+    formData.append('resume_file', file);
+    formData.append('job_description', jobInput);
+
+    try {
+      const res = await fetch('http://localhost:8000/analyse_resume/', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      // Navigate and pass backend response to Analysis
+      navigate('/analysis', { state: { analysisData: data } });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('resume_file', file);
+    formData.append('job_description', jobInput);
+    try {
+      const endpoint = 'http://localhost:8000/score_resume/';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        console.log('File uploaded successfully');
+      } else {
+        console.error('File upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
   const handleSuggestionClick = (role) => {
     setJobInput(role);
     setSuggestions([]);
   };
   const navigate = useNavigate();
+  const [file, setFile] = useState(null);
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
@@ -78,14 +129,16 @@ export default function App() {
             >
               What kind of job role are you looking for?
             </label>
-            <input
-              type="text"
-              id="job-role"
-              value={jobInput}
-              onChange={handleJobInput}
-              placeholder="e.g. Data Analyst, Frontend Developer, Marketing Manager..."
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#335DC8]"
-            />
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                id="job-role"
+                value={jobInput}
+                onChange={handleJobInput}
+                placeholder="e.g. Data Analyst, Frontend Developer, Marketing Manager..."
+                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#335DC8]"
+              />
+            </form>
             <ul className="absolute max-w-[250px] bg-white border border-gray-300 p-1 list-none">
               {suggestions.map((role) => (
                 <li
@@ -105,16 +158,31 @@ export default function App() {
           </p>
 
           <div className="mt-8 flex flex-col items-center">
-            <FileUploader
-              handleClick={handleClick}
-              handleDrop={handleDrop}
-              handleFileChange={handleFileChange}
-              fileName={fileName}
-              fileInputRef={fileInputRef}
-            />
-
+            <div
+              className="border-2 border-dashed rounded-lg px-4 py-8 flex flex-col text-center items-center justify-center gap-3 cursor-pointer border-[#518EF8] hover:bg-[#f7faff] transition"
+              onClick={handleClick}
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+            >
+              <p className="text-[#313136] text-lg md:text-xl font-normal">
+                Drag and Drop your resume here
+              </p>
+              <span className="font-normal text-sm md:text-base text-[#31313680]">
+                or click browse (PDF only)
+              </span>
+              <form onSubmit={handleSubmit}>
+                <input
+                  type="file"
+                  className="hidden"
+                  ref={fileInputRef}
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileChange}
+                />
+                <span>{fileName}</span>
+              </form>
+            </div>
             <button
-              onClick={() => navigate('/analysis')}
+              onClick={handleStartAnalysis}
               className="bg-[#335DC8] text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-[#2748a2] transition-all w-full md:w-auto"
             >
               Start Analysis
