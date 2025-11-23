@@ -5,6 +5,10 @@ export function FileUploader({
   fileName,
   fileInputRef,
 }) {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+  };
   return (
     <div
       className="border-2 border-dashed rounded-lg px-4 py-8 flex flex-col text-center items-center justify-center gap-3 cursor-pointer border-[#518EF8] hover:bg-[#f7faff] transition"
@@ -18,14 +22,16 @@ export function FileUploader({
       <span className="font-normal text-sm md:text-base text-[#31313680]">
         or click browse (PDF only)
       </span>
-      <input
-        type="file"
-        className="hidden"
-        ref={fileInputRef}
-        accept=".pdf,application/pdf"
-        onChange={handleFileChange}
-      />
-      <span>{fileName}</span>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="file"
+          className="hidden"
+          ref={fileInputRef}
+          accept=".pdf,application/pdf"
+          onChange={handleFileChange}
+        />
+        <span>{fileName}</span>
+      </form>
     </div>
   );
 }

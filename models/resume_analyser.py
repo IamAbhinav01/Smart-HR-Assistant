@@ -1,58 +1,73 @@
-from parser import AdvancedResumeParser
+import json
+from models.parser import AdvancedResumeParser
+from models.ats_score import ResumeScorer
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
 load_dotenv()
 from langchain_groq import ChatGroq
 
 class Analyser:
-    def __init__(self, model_name="moonshotai/kimi-k2-instruct-0905", temperature=0.8):
+    def __init__(self, model_name="moonshotai/kimi-k2-instruct-0905", temperature=0):
         self.parser = AdvancedResumeParser()
-
-        self.model  = ChatGroq(
+        self.score = ResumeScorer()
+        
+        self.model = ChatGroq(
             model=model_name,
             temperature=temperature,
             max_retries=2
         )
+        
         self.resume_drawbacks = PromptTemplate(
-            input_variables=["result","job_descripion"],
+            input_variables=["result", "job_description", "score_data"],
             template="""
-            You are an expert ATS reviewer and HR analyst.
-Your task is to analyze the given resume against the provided job description and find any drawbacks, missing skills, experience gaps, or mismatches.
+You are an expert ATS evaluator and HR analyst.
 
-Return the response **only** in valid JSON format suitable for API usage.
-Do not include any extra commentary or text outside JSON.
+Use the `score_data.total` value to decide:
+
+- If total > 70 → return positive reasons
+- If total < 70 → return improvement reasons
+
+Do NOT mention the score explicitly.
+Return ONLY valid JSON:
+{{
+  "review": ["reason 1", "reason 2", "reason 3"]
+}}
 
 Resume: {result}
-
 Job Description: {job_description}
-
-Expected JSON format:
-{{
-  "review": "<detailed but concise feedback on drawbacks and areas of improvement in the resume with respect to the job description>"
-}}
+Score Data: {score_data}
 """
         )
-        self.chain = self.resume_drawbacks | self.model
 
-    def analyse_resume(self, resume_path: str, job_description: str):
-        raw_text = self.parser.text_auto_extract(resume_path)
+    def analyse_resume(self, file_path: str, job_description: str):
+        result = self.parser.llm_tool_call(file_path)
+        score_data = self.score.score_resume(file_path, job_description)  # Get score first
 
-        llm_output = self.parser.llm_tool_call(raw_text)
-        parsed_result = llm_output.content
-
+        # Create the chain
+        chain = self.resume_drawbacks | self.model | JsonOutputParser()
         
-        result = self.chain.invoke({
-            "result": parsed_result,
-            "job_description": job_description
-        })
-
-        return result.content
+        # Invoke
+        try:
+            response = chain.invoke({
+                "result": result,
+                "job_description": job_description,
+                "score_data": score_data  # Pass as dict
+            })
+            # Validate
+            if isinstance(response, dict) and "review" in response:
+                return response
+            else:
+                return {"review": ["Analysis complete, but no specific feedback generated."]}
+        except Exception as e:
+            print(f"Analysis error: {e}")
+            return {"review": []}
 
 if __name__ == "__main__":
     analyser = Analyser()
-    FILE_PATH = r'E:\airesume\myResume.docx'
+    FILE_PATH = r'E:\airesume\softwareResume.pdf'
     job_text = "mlops engineer"
 
     print("\n=== Resume Analysis ===")
-    output = analyser.analyse_resume(FILE_PATH, job_text)
+    output = analyser.analyse_resume(FILE_PATH, job_text,)
     print(output)

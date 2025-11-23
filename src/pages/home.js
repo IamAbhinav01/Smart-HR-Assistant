@@ -61,26 +61,11 @@ export default function App() {
     );
     setSuggestions(matches);
   };
-  const handleStartAnalysis = async () => {
-    const file = fileInputRef.current.files[0];
+  const handleStartAnalysis = () => {
     if (!file) return alert('Upload your resume!');
+    if (!jobInput) return alert('Enter a job description!');
 
-    const formData = new FormData();
-    formData.append('resume_file', file);
-    formData.append('job_description', jobInput);
-
-    try {
-      const res = await fetch('http://localhost:8000/analyse_resume/', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      // Navigate and pass backend response to Analysis
-      navigate('/analysis', { state: { analysisData: data } });
-    } catch (err) {
-      console.error(err);
-    }
+    navigate('/analysis', { state: { file, jobDescription: jobInput } });
   };
 
   const handleSubmit = async (e) => {

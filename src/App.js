@@ -1,10 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from '../src/pages/home';
-import Analysis from '../src/pages/Analysis';
+import Home from './pages/home';
+import Analysis from './pages/Analysis';
 
 export default function App() {
   return (
-    // <Analysis />
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
