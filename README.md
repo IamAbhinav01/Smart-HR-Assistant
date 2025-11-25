@@ -1,70 +1,144 @@
-# Getting Started with Create React App
+# Smart HR Assistant (Smart-HR-Assistant)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+AI-powered Resume Analysis & ATS Score Evaluation Tool
 
-## Available Scripts
+Smart HR Assistant is a full-stack web application that helps job seekers analyze their resumes against a target job description. It provides structured insights and an ATS (Applicant Tracking System) score using a FastAPI backend and a React frontend.
 
-In the project directory, you can run:
+## Table of contents
 
-### `npm start`
+- [Features](#features)
+- [Project structure](#project-structure)
+- [Architecture overview](#architecture-overview)
+- [Backend (FastAPI)](#backend-fastapi)
+  - [Endpoints](#endpoints)
+  - [Running locally (backend)](#running-locally-backend)
+- [Frontend (React)](#frontend-react)
+  - [Running locally (frontend)](#running-locally-frontend)
+- [API examples](#api-examples)
+- [Security & production notes](#security--production-notes)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Next steps / TODOs](#next-steps--todos)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Resume analysis: extract skills, keywords and assess content match to a job description.
+- ATS scoring: compute an ATS-style score and highlight missing keywords.
+- Simple, API-driven frontend for upload and results display.
 
-### `npm test`
+## Project structure
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Top-level layout (important files):
 
-### `npm run build`
+```
+Smart-HR-Assistant/
+├── main.py                # FastAPI backend entry point
+├── models/                # Resume analysis and scoring logic
+│   ├── resume_analyser.py
+│   ├── ats_score.py
+│   └── parser.py
+├── temp_uploads/          # Temporarily stored resume files (created at runtime)
+├── requirements.txt       # Python backend dependencies
+└── src/                   # React frontend
+    ├── pages/
+    │   ├── home.js       # Resume upload + job description
+    │   └── Analysis.js    # Displays analysis results
+    ├── components/
+    │   └── FileUploader.js
+    ├── App.js
+    └── package.json
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Architecture overview
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. User uploads a PDF resume and supplies a job description on the frontend.
+2. Frontend sends two POST requests to the backend:
+   - `/analyse_resume/` → returns structured analysis JSON.
+   - `/score_resume/` → returns ATS score.
+3. Frontend navigates to the Analysis page and displays results returned by the backend.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Backend (FastAPI)
 
-### `npm run eject`
+Location: `main.py`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Endpoints
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- `POST /analyse_resume/`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+  - Form fields: `resume_file` (file), `job_description` (string).
+  - Action: saves the uploaded PDF into `temp_uploads/` and calls `models.resume_analyser.Analyser.analyse_resume()`.
+  - Response: JSON `{ "analysis": <object> }`.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- `POST /score_resume/`
+  - Form fields: same as `/analyse_resume/`.
+  - Action: saves file and calls `models.ats_score.ResumeScorer.score_resume()`.
+  - Response: JSON `{ "ats_score": <number> }`.
 
-## Learn More
+### Running locally (backend)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+PowerShell example:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-### Code Splitting
+The API will be available at `http://localhost:8000/`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Frontend (React)
 
-### Analyzing the Bundle Size
+Location: `src/`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Running locally (frontend)
 
-### Making a Progressive Web App
+PowerShell example:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```powershell
+npm install
+npm start
+```
 
-### Advanced Configuration
+The frontend is typically available at `http://localhost:3000/`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Notes about integration
 
-### Deployment
+- The frontend posts multipart/form-data to `http://localhost:8000/analyse_resume/` and `/score_resume/` (see `src/pages/home.js`).
+- If backend is hosted elsewhere, update the URLs or move them to configuration.
+- Configure CORS in FastAPI when serving frontend from a different origin.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## API examples
 
-### `npm run build` fails to minify
+PowerShell curl examples:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```powershell
+curl -X POST "http://localhost:8000/analyse_resume/" -F "resume_file=@C:\path\to\resume.pdf" -F "job_description=Data Scientist"
+
+curl -X POST "http://localhost:8000/score_resume/" -F "resume_file=@C:\path\to\resume.pdf" -F "job_description=Data Scientist"
+```
+
+## Security & production notes
+
+- Sanitize or generate server-side unique filenames (UUID) instead of trusting user-supplied names.
+- Implement CORS, authentication, rate-limiting, and request size limits before public deployment.
+- Use HTTPS in production. Prefer ephemeral storage for uploads and implement automatic cleanup.
+- If analysis is slow or resource-heavy, run it in background workers and serve progress via polling or WebSockets.
+
+## Troubleshooting
+
+- "Failed to contact the analysis service": verify the FastAPI server is running and accessible at the configured URL (default `http://localhost:8000/`).
+- 500 server errors: check the uvicorn console for tracebacks and ensure Python dependencies and model files are present.
+- File size: frontend blocks >5 MB by default; adjust client and server limits if needed.
+
+## Contributing
+
+1. Fork the repository and create a branch.
+2. Add tests and documentation updates where relevant.
+3. Open a pull request with a clear description of changes.
+
+## Next steps / TODOs
+
+- Move API base URL to an environment/config variable in the frontend.
+- Add server-side filename sanitization and cleanup for `temp_uploads/`.
+- Improve UX for long-running analysis (progress indicator, background jobs).
+- Add unit and integration tests for `models/` and API endpoints.
