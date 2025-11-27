@@ -83,100 +83,41 @@ ALL_TOOLS = [
 
 class AdvancedResumeParser:
     def __init__(self, model_name: str = "moonshotai/kimi-k2-instruct-0905"):
+        self.llm = ChatGroq(
+            temperature=0, 
+            model_name=model_name
+        )
+
+    def parse_resume(self, file_path: str):
+        # 1. Extract the text yourself (no tool calling)
+        resume_text = self.text_auto_extract(file_path)
+
+        # 2. Ask the LLM directly (no tools allowed)
+        prompt = f"""
+        You are a resume parser for ATS.
+        Parse the following resume text into:
+        - Name
+        - Contact
+        - Summary
+        - Experience
+        - Education
+        - Skills
         
-        self.llm = ChatGroq(temperature=0, model_name=model_name)
-        
-        self.available_tools = ALL_TOOLS
-       
-        self.tool_map = {tool.name: tool for tool in ALL_TOOLS}
+        Resume:
+        {resume_text}
+        """
+
+        response = self.llm.invoke([HumanMessage(content=prompt)])
+        return response.content
 
     def text_auto_extract(self, file_path: str) -> str:
-        """Determines file type and uses the appropriate raw function for text extraction."""
         ext = os.path.splitext(file_path)[-1].lower()
         
         if ext == '.pdf':
-            return _extract_text_from_pdf_func(file_path) 
+            return _extract_text_from_pdf_func(file_path)
         if ext == '.docx':
             return _extract_text_from_docx_func(file_path)
         if ext == '.txt':
             return _extract_text_from_txt_func(file_path)
-            
+
         raise ValueError(f"Unsupported file type: {ext}")
-
-    def llm_tool_call(self, resume_text: str):
-        """
-        Initializes an agent-like chain to parse the resume text using the LLM and its tools.
-        """
-        
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", 
-             "You are an **extreme-level, highly-achievable resume parser** for an ATS. Your task is to analyze the provided resume text in minute detail and output the parsed data using rich markdown formatting. You have access to tools; if you need to perform entity recognition, call the `enhance_with_spacy` tool with the resume text. The final output MUST be a comprehensive markdown document suitable for ATS validation, including Name, Contact, Summary, Experience, Education, and Skills."),
-            ("user", 
-             "Resume to parse: \n\n{resume}\n\nStrictly follow the markdown output format for ATS.")
-        ])
-        
-       
-        llm_with_tools = self.llm.bind_tools(self.available_tools)
-        
-        chain = prompt | llm_with_tools
-        response = chain.invoke({"resume": resume_text})
-        
-        
-        if response.tool_calls:
-            print(f"--- LLM requested {len(response.tool_calls)} tool call(s) ---")
-            tool_messages = []
-            
-            for tool_call in response.tool_calls:
-                tool_name = tool_call["name"]
-                tool_args = tool_call["args"]
-                tool_id = tool_call["id"]
-                
-                print(f"Executing tool: {tool_name} with args: {tool_args}")
-                
-                
-                tool_output = self.tool_map[tool_name].invoke(tool_args)
-                
-              
-                tool_messages.append(ToolMessage(
-                    content=str(tool_output),
-                    tool_call_id=tool_id,
-                ))
-
-           
-            print("--- Feeding tool results back to LLM for final response ---")
-            
-            
-            final_messages = prompt.format_messages(resume=resume_text) + [response] + tool_messages
-            
-            final_response = self.llm.invoke(final_messages)
-            return final_response
-            
-        return response
-
-
-
-if __name__ == "__main__":
-    # NOTE: ADJUST THIS PATH TO YOUR ACTUAL FILE LOCATION
-    FILE_PATH = r'E:\airesume\myResume.docx'
-    
-    if not os.path.exists(FILE_PATH):
-        print(f"ERROR: File not found at path: {FILE_PATH}")
-    else:
-        parser = AdvancedResumeParser()
-        
-        try:
-            # 1. Extract raw text using the direct, callable function
-            raw_text = parser.text_auto_extract(FILE_PATH)
-            print("--- Extracted Raw Text (First 300 chars) ---")
-            print(raw_text[:300] + "...")
-            
-            # 2. Call the LLM/Agent for parsing (including tool use if requested)
-            llm_output = parser.llm_tool_call(raw_text)
-            
-            print("\n--- Final LLM Parsed Output (ATS Ready) ---")
-            print(llm_output.content)
-
-        except ValueError as e:
-            print(f"Error during file processing: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")

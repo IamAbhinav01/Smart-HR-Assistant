@@ -14,8 +14,7 @@ class Analyser:
         
         self.model = ChatGroq(
             model=model_name,
-            temperature=temperature,
-            max_retries=2
+            temperature=temperature
         )
         
         self.resume_drawbacks = PromptTemplate(
@@ -41,7 +40,7 @@ Score Data: {score_data}
         )
 
     def analyse_resume(self, file_path: str, job_description: str):
-        result = self.parser.llm_tool_call(file_path)
+        result = self.parser.parse_resume(file_path)
         score_data = self.score.score_resume(file_path, job_description)  # Get score first
 
         # Create the chain

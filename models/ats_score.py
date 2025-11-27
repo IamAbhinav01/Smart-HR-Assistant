@@ -10,7 +10,7 @@ from langchain_groq import ChatGroq
 class ResumeScorer:
     def __init__(self, model_name="moonshotai/kimi-k2-instruct-0905", temperature=0):
         self.parser = AdvancedResumeParser()
-        self.model = ChatGroq(model=model_name, temperature=temperature, max_retries=2)
+        self.model = ChatGroq(model=model_name, temperature=temperature)
 
         self.resume_score_prompt = PromptTemplate(
             input_variables=["result", "job_description"],
@@ -35,7 +35,7 @@ Job Description: {job_description}
         )
 
     def score_resume(self, file_path: str, job_description: str):
-        result = self.parser.llm_tool_call(file_path)  # Your parsing logic here
+        result = self.parser.parse_resume(file_path)  # Your parsing logic here
         
         # Create the chain: Prompt -> Model -> JSON Parser
         chain = self.resume_score_prompt | self.model | JsonOutputParser()
