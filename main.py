@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from models.ats_score import ResumeScorer
 from models.resume_analyser import Analyser
+from models.question_genrator_analyser import QuestionGenerator
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import uuid
@@ -20,6 +21,7 @@ app.add_middleware(
 
 analyser = Analyser()
 scorer = ResumeScorer()
+generator = QuestionGenerator()
 
 @app.post("/analyse_resume/")
 async def analyse_resume(
@@ -82,3 +84,24 @@ async def score_resume(
         # Clean up: Delete the temporary file
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+
+@app.post("/practice_question/")
+async def question_generate(job_description: str = Form(...)):
+    try:
+        questions = generator.generate_questions(job_description)
+        return {"questions": questions}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/analyse_answer/")
+async def analyse_answer(
+    question: str = Form(...),
+    answer: str = Form(...)
+):
+    try:
+        feedback = generator.analyse_answer(question, answer)
+        return {"response": feedback}
+    except Exception as e:
+        return {"error": str(e)}

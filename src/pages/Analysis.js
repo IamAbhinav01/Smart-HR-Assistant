@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function Analysis() {
   const [progress, setProgress] = useState(0);
@@ -9,6 +10,10 @@ export default function Analysis() {
   const [scoreData, setScoreData] = useState({ total: 0, breakdown: {} });
   const [reasons, setReasons] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const handleQuestionAnalysis = () => {
+    navigate('/questions', { state: { jobDescription: jobDescription } });
+  };
 
   // Fetch data from backend on mount
   useEffect(() => {
@@ -188,7 +193,10 @@ export default function Analysis() {
           </h3>
 
           <div className="flex gap-4 mt-4">
-            <button className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl text-base font-semibold shadow-md hover:bg-indigo-700 hover:scale-[1.02] transition duration-300">
+            <button
+              className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl text-base font-semibold shadow-md hover:bg-indigo-700 hover:scale-[1.02] transition duration-300"
+              onClick={handleQuestionAnalysis}
+            >
               Yes, Start Test
             </button>
 
