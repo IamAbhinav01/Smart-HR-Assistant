@@ -1,24 +1,28 @@
 # ================================
 # STAGE 1 — REACT BUILD (CRA + Tailwind)
 # ================================
+# STAGE 1 — REACT BUILD (CRA + Tailwind)
+# ================================
 FROM node:20-slim AS react-builder
 
 WORKDIR /app/frontend
 
-# Copy package.json and package-lock.json first for caching
-COPY frontend/package*.json ./
+# Copy package.json and package-lock.json first
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the frontend code
-COPY frontend/ ./
+# Copy frontend source and public folders
+COPY src/ ./src
+COPY public/ ./public
 
-# List files to debug missing files (optional)
+# Optional: debug files
 RUN ls -R src/pages
 
-# Build React app
+# Build React
 RUN npm run build
+
 
 # ================================
 # STAGE 2 — FASTAPI BACKEND
