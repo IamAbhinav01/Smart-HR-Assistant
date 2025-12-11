@@ -22,7 +22,7 @@ app.add_middleware(
 analyser = Analyser()
 scorer = ResumeScorer()
 generator = QuestionGenerator()
-
+app.mount("/static", StaticFiles(directory="frontend_build/static"), name="static")
 @app.post("/analyse_resume/")
 async def analyse_resume(
     resume_file: UploadFile = File(...),
