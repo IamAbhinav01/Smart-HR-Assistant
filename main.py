@@ -3,6 +3,8 @@ from models.ats_score import ResumeScorer
 from models.resume_analyser import Analyser
 from models.question_genrator_analyser import QuestionGenerator
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import os
 import uuid
 import shutil
@@ -22,7 +24,12 @@ app.add_middleware(
 analyser = Analyser()
 scorer = ResumeScorer()
 generator = QuestionGenerator()
-app.mount("/static", StaticFiles(directory="frontend_build/static"), name="static")
+pp.mount("/static", StaticFiles(directory="frontend_build/static"), name="static")
+
+# Catch-all route: serve React index.html
+@app.get("/{full_path:path}")
+def serve_react(full_path: str):
+    return FileResponse("frontend_build/index.html")
 @app.post("/analyse_resume/")
 async def analyse_resume(
     resume_file: UploadFile = File(...),
