@@ -5,15 +5,20 @@ FROM node:20-slim AS react-builder
 
 WORKDIR /app/frontend
 
-# Copy frontend files
-COPY src ./src
-COPY public ./public
-COPY package*.json ./
+# Copy package.json and package-lock.json first for caching
+COPY frontend/package*.json ./
 
-# Install dependencies and build React (Tailwind will compile automatically)
+# Install dependencies
 RUN npm install
-RUN npm run build
 
+# Copy the rest of the frontend code
+COPY frontend/ ./
+
+# List files to debug missing files (optional)
+RUN ls -R src/pages
+
+# Build React app
+RUN npm run build
 
 # ================================
 # STAGE 2 — FASTAPI BACKEND
@@ -26,7 +31,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install backend dependencies
-COPY requirements.txt .
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
