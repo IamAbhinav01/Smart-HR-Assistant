@@ -19,7 +19,7 @@ function TestWithSummary() {
 
   const location = useLocation();
   const { jobDescription } = location.state || {};
-
+  const API_URL = 'https://smart-hr-assistant-backend.onrender.com';
   // Fetch questions on load
   useEffect(() => {
     if (!jobDescription) return;
@@ -30,7 +30,11 @@ function TestWithSummary() {
       const formData = new FormData();
       formData.append('job_description', jobDescription);
 
-      const res = await fetch('http://localhost:8000/practice_question/', {
+      // const res = await fetch('http://localhost:8000/practice_question/', {
+      //   method: 'POST',
+      //   body: formData,
+      // });
+      const res = await fetch(`${API_URL}/practice_question/`, {
         method: 'POST',
         body: formData,
       });
@@ -58,7 +62,11 @@ function TestWithSummary() {
       fd.append('question', q);
       fd.append('answer', ans);
 
-      const res = await fetch('http://localhost:8000/analyse_answer/', {
+      // const res = await fetch('http://localhost:8000/analyse_answer/', {
+      //   method: 'POST',
+      //   body: fd,
+      // });
+      const res = await fetch(`${API_URL}/analyse_answer/`, {
         method: 'POST',
         body: fd,
       });

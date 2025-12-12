@@ -6,6 +6,7 @@ export default function Analysis() {
   const [progress, setProgress] = useState(0);
   const location = useLocation();
   const { file, jobDescription } = location.state || {};
+  const API_URL = 'https://smart-hr-assistant-backend.onrender.com';
 
   const [scoreData, setScoreData] = useState({ total: 0, breakdown: {} });
   const [reasons, setReasons] = useState([]);
@@ -27,7 +28,11 @@ export default function Analysis() {
       formData.append('job_description', jobDescription);
 
       try {
-        const res = await fetch('http://localhost:8000/analyse_resume/', {
+        // const res = await fetch('http://localhost:8000/analyse_resume/', {
+        //   method: 'POST',
+        //   body: formData,
+        // });
+        const res = await fetch(`${API_URL}/analyse_resume/`, {
           method: 'POST',
           body: formData,
         });

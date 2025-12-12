@@ -9,7 +9,7 @@ export default function App() {
   const [jobInput, setJobInput] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const fileInputRef = useRef(null);
-
+  const API_URL = 'https://smart-hr-assistant-backend.onrender.com';
   const jobRoles = [
     'Software Engineer',
     'Data Scientist',
@@ -72,7 +72,8 @@ export default function App() {
     formData.append('resume_file', file);
     formData.append('job_description', jobInput);
     try {
-      const endpoint = 'http://localhost:8000/score_resume/';
+      // const endpoint = 'http://localhost:8000/score_resume/';
+      const endpoint = `${API_URL}/score_resume/`;
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
