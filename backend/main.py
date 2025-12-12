@@ -12,10 +12,13 @@ import shutil
 os.makedirs("temp_uploads", exist_ok=True)
 
 app = FastAPI()
-
+origins = [
+    "https://smart-hr-assistant-frontend.onrender.com",  # your deployed frontend URL
+    "http://localhost:3000",  # optional for local dev
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
